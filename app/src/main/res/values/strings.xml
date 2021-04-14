@@ -4,4 +4,8 @@
 
 <resources>
     <string name="app_name">Biometric Login</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="use_biometrics_to_login">Use biometrics to login</string>
 </resources>
