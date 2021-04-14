@@ -9,6 +9,7 @@ import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
+import com.google.gson.Gson
 import com.hashim.biometriclogin.data.CipherWrapper
 import java.nio.charset.Charset
 import java.security.KeyStore
@@ -69,7 +70,8 @@ object CryptoManagerImpl : CryptoManager {
         mode: Int,
         prefKey: String
     ) {
-        TODO("Not yet implemented")
+        val hJsonString = Gson().toJson(ciphertextWrapper)
+        context.getSharedPreferences(filename, mode).edit().putString(prefKey, hJsonString).apply()
     }
 
     override fun hGetCipherFromSharedPrefsOrDataStore(
@@ -78,7 +80,8 @@ object CryptoManagerImpl : CryptoManager {
         mode: Int,
         prefKey: String
     ): CipherWrapper? {
-        TODO("Not yet implemented")
+        val hJsonString = context.getSharedPreferences(filename, mode).getString(prefKey, null)
+        return Gson().fromJson(hJsonString, CipherWrapper::class.java)
     }
 
 

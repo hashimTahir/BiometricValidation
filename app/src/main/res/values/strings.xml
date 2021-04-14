@@ -8,4 +8,8 @@
     <string name="password">Password</string>
     <string name="login">Login</string>
     <string name="use_biometrics_to_login">Use biometrics to login</string>
+    <string name="enable_biometric_login">Enable biometric login</string>
+    <string name="desc_biometrics_authorization">Enter your login ID and password to confirm activation of Biometric Login.</string>
+    <string name="cancel">Cancel</string>
+    <string name="authorize">Authorize</string>
 </resources>
