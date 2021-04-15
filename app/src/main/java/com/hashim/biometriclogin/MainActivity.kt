@@ -4,39 +4,25 @@
 
 package com.hashim.biometriclogin
 
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
-import com.hashim.biometriclogin.Constants.Companion.H_BIOMETRIC_KEY
-import com.hashim.biometriclogin.Constants.Companion.H_CIPHER_TEXT_KEY
-import com.hashim.biometriclogin.Constants.Companion.H_SHARED_PREFS
+import androidx.core.widget.doAfterTextChanged
 import com.hashim.biometriclogin.crypto.BioMetricUtis
-import com.hashim.biometriclogin.crypto.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
-import com.hashim.biometriclogin.crypto.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
-import com.hashim.biometriclogin.crypto.CryptoManagerImpl
-import com.hashim.biometriclogin.data.TestUser
 import com.hashim.biometriclogin.databinding.ActivityMainBinding
+import com.hashim.biometriclogin.events.LoginState
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
     private lateinit var hActivityMainBinding: ActivityMainBinding
     private val hMainViewModel: MainViewModel by viewModels()
 
-    private val hBioMetricUtis = BioMetricUtis
-    private val hCryptoManagerImpl = CryptoManagerImpl
-    private val hCipherWrapper
-        get() = hCryptoManagerImpl.hGetCipherFromSharedPrefsOrDataStore(
-            context = applicationContext,
-            filename = H_SHARED_PREFS,
-            mode = Context.MODE_PRIVATE,
-            prefKey = H_CIPHER_TEXT_KEY,
-        )
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,90 +37,99 @@ class MainActivity : AppCompatActivity() {
 
         hSubscribeObservers()
 
-        hBioMetricUtis.hCheckIfBioMeticAuthenticationisAvailable(this) {
-            when (it) {
-                H_HAS_BIOMETRIC_VALIDATION -> {
-                    hHandleSytemHasBioMetrics()
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun hSubscribeObservers() {
+
+        hMainViewModel.hLoginResultLd.observe(this) { loginResult ->
+            if (loginResult.hSuccess) {
+                Timber.d("App loged in ")
+            }
+
+        }
+        hMainViewModel.hLoginStateLd.observe(this) { loginState ->
+            when (loginState) {
+                is LoginState.SuccessLoginState -> {
+                    hActivityMainBinding.hLoginButton.isEnabled = loginState.hIsDataValid
                 }
-                H_ERROR_BIOMETRIC_VALIDATION -> {
-                    hActivityMainBinding.hBiometricLogin.visibility = View.GONE
-                    if (hCipherWrapper == null) {
-                        hDoConvertionalLoginWithPassword()
+                is LoginState.FailedLoginState -> {
+                    hActivityMainBinding.hLoginButton.isEnabled = false
+                    loginState.hUsernameError?.let {
+                        hActivityMainBinding.hUserNameEt.error = it
+                    }
+                    loginState.hPasswordError?.let {
+                        hActivityMainBinding.hPasswordEt.error = it
+                    }
+                }
+            }
+
+        }
+        hMainViewModel.hBioMetricResultLd.observe(this) { bioMetricResult ->
+            bioMetricResult?.let {
+                it.hHasBioMetricValidation.let {
+                    /*Means app has biometrics already enabled*/
+                    if (it) {
+                        hActivityMainBinding.hBiometricLogin.visibility = View.VISIBLE
+                        hActivityMainBinding.hBiometricLogin.setOnClickListener {
+                            hMainViewModel.hLoginWithBioMetricAuthentication()
+                        }
+                    } else {
+                        hActivityMainBinding.hBiometricLogin.visibility = View.GONE
+
+                    }
+
+
+                }
+                it.hOpenBioMetricEnablerIntnet.let {
+                    if (it) {
+                        startActivity(Intent(this, BioMetricActivity::class.java))
+                    }
+                }
+                it.hMessage?.let { message ->
+                    Toast.makeText(this, message, Toast.LENGTH_LONG)
+                        .show()
+                }
+                it.hCreatePompter.let {
+
+                    val hPrompt = BioMetricUtis.hCreateBioMetricPrompt(this) {
+                        hMainViewModel.hDecryptToken(it)
+                    }
+                    bioMetricResult.hCipher?.let {
+                        val hPromptInfo = BioMetricUtis.hCreatePromptInfo(this)
+                        hPrompt.authenticate(
+                            hPromptInfo,
+                            BiometricPrompt.CryptoObject(bioMetricResult.hCipher)
+                        )
                     }
                 }
             }
         }
     }
 
-    private fun hSubscribeObservers() {
-
-        hMainViewModel.hLoginResultLd.observe(this) { loginResult ->
-
-        }
-        hMainViewModel.hLoginStateLd.observe(this) { loginState ->
-
-        }
-    }
-
     private fun hSetupListeners() {
         hActivityMainBinding.hLoginButton.setOnClickListener {
-            hMainViewModel.hDoConventionalLogin()
-        }
-    }
-
-
-    private fun hDoConvertionalLoginWithPassword() {
-
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun hHandleSytemHasBioMetrics() {
-
-        Timber.d("hHandleSytemHasBioMetrics")
-        hActivityMainBinding.hBiometricLogin.visibility = View.VISIBLE
-        hActivityMainBinding.hBiometricLogin.setOnClickListener {
-
-            /*Means app has biometrics already enabled*/
-            if (hCipherWrapper != null) {
-                hShowBiometricPrompter()
-            } else {
-                /*Enable Biometric login for the app*/
-                startActivity(Intent(this, BioMetricActivity::class.java))
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun hShowBiometricPrompter() {
-        hCipherWrapper?.let { cipherWrapper ->
-            val hCipher = hCryptoManagerImpl.hGetInitializedCipherForDecryption(
-                keyName = H_BIOMETRIC_KEY,
-                initializationVector = hCipherWrapper!!.initializationVector
+            hMainViewModel.hDoConventionalLogin(
+                hActivityMainBinding.hUserNameEt.text.toString(),
+                hActivityMainBinding.hPasswordEt.text.toString(),
             )
-            val hPrompt = hBioMetricUtis.hCreateBioMetricPrompt(this) {
-                hDecryptToken(it)
-            }
-            val hPromptInfo = hBioMetricUtis.hCreatePromptInfo(this)
-            hPrompt.authenticate(hPromptInfo, BiometricPrompt.CryptoObject(hCipher))
+        }
 
+        hActivityMainBinding.hUserNameEt.doAfterTextChanged {
+            hMainViewModel.hDoConventionalLogin(
+                hActivityMainBinding.hUserNameEt.text.toString(),
+                hActivityMainBinding.hPasswordEt.text.toString(),
+            )
+        }
+        hActivityMainBinding.hPasswordEt.doAfterTextChanged {
+            hMainViewModel.hDoConventionalLogin(
+                hActivityMainBinding.hUserNameEt.text.toString(),
+                hActivityMainBinding.hPasswordEt.text.toString(),
+            )
         }
     }
 
-    private fun hDecryptToken(authResult: BiometricPrompt.AuthenticationResult) {
-        hCipherWrapper?.let { textWrapper ->
-            authResult.cryptoObject?.cipher?.let {
-                val hText =
-                    hCryptoManagerImpl.hDecryptData(
-                        textWrapper.ciphertext,
-                        it
-                    )
-                val h = TestUser(hToken = hText)
-
-
-                Timber.d("User $h")
-            }
-        }
-    }
 
 }
 
