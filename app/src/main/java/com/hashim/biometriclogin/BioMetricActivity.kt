@@ -10,8 +10,9 @@ import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
-import com.hashim.biometriclogin.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.crypto.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
 import com.hashim.biometriclogin.Constants.Companion.H_BIOMETRIC_KEY
+import com.hashim.biometriclogin.crypto.BioMetricUtis
 import com.hashim.biometriclogin.crypto.CryptoManagerImpl
 import com.hashim.biometriclogin.data.TestUser
 import com.hashim.biometriclogin.databinding.ActivityBioMetricBinding

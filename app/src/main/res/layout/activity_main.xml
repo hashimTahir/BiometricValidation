@@ -62,12 +62,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="@dimen/_16dp"
-        android:visibility="gone"
         android:layout_marginTop="@dimen/_16dp"
         android:layout_marginRight="@dimen/_16dp"
         android:text="@string/use_biometrics_to_login"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="#0000EE"
+        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/login" />
 

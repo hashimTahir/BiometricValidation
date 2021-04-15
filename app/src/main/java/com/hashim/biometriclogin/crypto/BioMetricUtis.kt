@@ -2,7 +2,7 @@
  * Copyright (c) 2021/  4/ 15.  Created by Hashim Tahir
  */
 
-package com.hashim.biometriclogin
+package com.hashim.biometriclogin.crypto
 
 import android.content.Context
 import android.os.Build
@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import com.hashim.biometriclogin.R
 import timber.log.Timber
 
 object BioMetricUtis {
@@ -68,7 +69,7 @@ object BioMetricUtis {
         return BiometricPrompt(hContext as AppCompatActivity, hExecutor, hCallBack)
     }
 
-    fun hCreatePromptInfo(bioMetricActivity: BioMetricActivity): BiometricPrompt.PromptInfo =
+    fun hCreatePromptInfo(bioMetricActivity: Context): BiometricPrompt.PromptInfo =
         BiometricPrompt.PromptInfo.Builder().apply {
             setTitle(
                 String.format(

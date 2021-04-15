@@ -6,16 +6,22 @@ package com.hashim.biometriclogin
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import com.hashim.biometriclogin.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
-import com.hashim.biometriclogin.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.crypto.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.crypto.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.Constants.Companion.H_BIOMETRIC_KEY
 import com.hashim.biometriclogin.Constants.Companion.H_CIPHER_TEXT_KEY
 import com.hashim.biometriclogin.Constants.Companion.H_SHARED_PREFS
+import com.hashim.biometriclogin.crypto.BioMetricUtis
 import com.hashim.biometriclogin.crypto.CryptoManagerImpl
+import com.hashim.biometriclogin.data.TestUser
 import com.hashim.biometriclogin.databinding.ActivityMainBinding
 import timber.log.Timber
 import java.util.concurrent.Executor
@@ -35,6 +41,7 @@ class MainActivity : AppCompatActivity() {
             prefKey = H_CIPHER_TEXT_KEY,
         )
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hActivityMainBinding = ActivityMainBinding.inflate(layoutInflater)
@@ -63,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun hHandleSytemHasBioMetrics() {
 
         Timber.d("hHandleSytemHasBioMetrics")
@@ -79,9 +87,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun hShowBiometricPrompter() {
-        Timber.d("hShowBiometricPrompter")
+        hCipherWrapper?.let { cipherWrapper ->
+            val hCipher = hCryptoManagerImpl.hGetInitializedCipherForDecryption(
+                keyName = H_BIOMETRIC_KEY,
+                initializationVector = hCipherWrapper!!.initializationVector
+            )
+            val hPrompt = hBioMetricUtis.hCreateBioMetricPrompt(this) {
+                hDecryptToken(it)
+            }
+            val hPromptInfo = hBioMetricUtis.hCreatePromptInfo(this)
+            hPrompt.authenticate(hPromptInfo, BiometricPrompt.CryptoObject(hCipher))
 
+        }
+    }
+
+    private fun hDecryptToken(authResult: BiometricPrompt.AuthenticationResult) {
+        hCipherWrapper?.let { textWrapper ->
+            authResult.cryptoObject?.cipher?.let {
+                val hText =
+                    hCryptoManagerImpl.hDecryptData(
+                        textWrapper.ciphertext,
+                        it
+                    )
+                val h = TestUser(hToken = hText)
+
+
+                Timber.d("User $h")
+            }
+        }
     }
 
 }
+
