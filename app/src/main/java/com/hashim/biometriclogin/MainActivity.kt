@@ -10,9 +10,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.biometric.BiometricManager.*
-import androidx.biometric.BiometricManager.Authenticators.*
 import androidx.core.content.ContextCompat
+import com.hashim.biometriclogin.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
 import com.hashim.biometriclogin.Constants.Companion.H_CIPHER_TEXT_KEY
 import com.hashim.biometriclogin.Constants.Companion.H_SHARED_PREFS
 import com.hashim.biometriclogin.crypto.CryptoManagerImpl
@@ -25,14 +25,14 @@ class MainActivity : AppCompatActivity() {
     private val hMainViewModel: MainViewModel by viewModels()
     private lateinit var hExecutor: Executor
 
-
+    private val hBioMetricUtis = BioMetricUtis
     private val hCryptoManagerImpl = CryptoManagerImpl
     private val hCipherWrapper
         get() = hCryptoManagerImpl.hGetCipherFromSharedPrefsOrDataStore(
-                context = applicationContext,
-                filename = H_SHARED_PREFS,
-                mode = Context.MODE_PRIVATE,
-                prefKey = H_CIPHER_TEXT_KEY,
+            context = applicationContext,
+            filename = H_SHARED_PREFS,
+            mode = Context.MODE_PRIVATE,
+            prefKey = H_CIPHER_TEXT_KEY,
         )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,33 +43,21 @@ class MainActivity : AppCompatActivity() {
         Timber.d("ONcreate")
         hExecutor = ContextCompat.getMainExecutor(this)
 
-        hCheckIfBioMeticAuthenticationisAvailable()
-    }
-
-
-    private fun hCheckIfBioMeticAuthenticationisAvailable() {
-        Timber.d("Called")
-        val hBioMetricManager = from(this)
-        when (
-            hBioMetricManager.canAuthenticate(
-                    BIOMETRIC_STRONG or
-                            DEVICE_CREDENTIAL or
-                            BIOMETRIC_WEAK
-            )
-        ) {
-            BIOMETRIC_SUCCESS ->
-                hHandleSytemHasBioMetrics()
-            BIOMETRIC_ERROR_NO_HARDWARE,
-            BIOMETRIC_ERROR_HW_UNAVAILABLE,
-            BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                hActivityMainBinding.hBiometricLogin.visibility = View.GONE
-                if (hCipherWrapper == null) {
-                    hDoConvertionalLoginWithPassword()
+        hBioMetricUtis.hCheckIfBioMeticAuthenticationisAvailable(this) {
+            when (it) {
+                H_HAS_BIOMETRIC_VALIDATION -> {
+                    hHandleSytemHasBioMetrics()
+                }
+                H_ERROR_BIOMETRIC_VALIDATION -> {
+                    hActivityMainBinding.hBiometricLogin.visibility = View.GONE
+                    if (hCipherWrapper == null) {
+                        hDoConvertionalLoginWithPassword()
+                    }
                 }
             }
         }
-
     }
+
 
     private fun hDoConvertionalLoginWithPassword() {
 

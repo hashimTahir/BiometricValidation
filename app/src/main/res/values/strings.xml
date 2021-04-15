@@ -12,4 +12,6 @@
     <string name="desc_biometrics_authorization">Enter your login ID and password to confirm activation of Biometric Login.</string>
     <string name="cancel">Cancel</string>
     <string name="authorize">Authorize</string>
-</resources>
+    <string name="prompt_info_title">%s Authentication</string>
+    <string name="prompt_info_subtitle">Please login to get access</string>
+    <string name="prompt_info_use_app_password">Use app password</string></resources>
