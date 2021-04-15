@@ -13,6 +13,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.hashim.biometriclogin.Constants.Companion.H_BIOMETRIC_KEY
 import com.hashim.biometriclogin.crypto.BioMetricUtis
 import com.hashim.biometriclogin.crypto.CryptoManagerImpl
 import com.hashim.biometriclogin.data.TestUser
@@ -22,6 +23,7 @@ import com.hashim.biometriclogin.events.LoginState
 import com.hashim.biometriclogin.events.LoginState.FailedLoginState
 import com.hashim.biometriclogin.events.LoginState.SuccessLoginState
 import timber.log.Timber
+import java.util.*
 
 class MainViewModel(
     application: Application
@@ -78,6 +80,16 @@ class MainViewModel(
             hLoginStateMld.value = SuccessLoginState(
                 hIsDataValid = true
             )
+        }
+
+
+
+        if (hIsUserNameValid(userName) && hIsPasswordValid(password)) {
+            TestUser.hUserName = userName
+            TestUser.hToken = UUID.randomUUID().toString()
+            hLoginResultMld.value = LoginResult(true)
+        } else {
+            hLoginResultMld.value = LoginResult(false)
         }
 
     }
@@ -139,11 +151,37 @@ class MainViewModel(
                         textWrapper.ciphertext,
                         it
                     )
-                val h = TestUser(hToken = hText)
-
-
-                Timber.d("User $h")
+                TestUser.hToken = hText
             }
         }
+    }
+
+    fun hEncryptAndStoreToken(authResult: BiometricPrompt.AuthenticationResult) {
+
+        authResult.cryptoObject?.cipher?.apply {
+
+            val encryptedServerTokenWrapper = hCryptoManagerImpl.hEncryptData(TestUser.hToken!!, this)
+            hCryptoManagerImpl.hSaveCipherToSharedPrefsOrDataStore(
+                encryptedServerTokenWrapper,
+                hContext,
+                Constants.H_SHARED_PREFS,
+                Context.MODE_PRIVATE,
+                Constants.H_CIPHER_TEXT_KEY,
+            )
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun hCreateCompletlyNewPrompter() {
+            val hCipher = hCryptoManagerImpl.hGetInitializedCipherForEncryption(
+                keyName = H_BIOMETRIC_KEY,
+            )
+            hBioMetricResultMld.value = BioMetricResult(
+                hCreatePompter = true,
+                hCipher = hCipher,
+            )
+
+
+
     }
 }

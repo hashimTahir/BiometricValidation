@@ -4,7 +4,7 @@
 
 package com.hashim.biometriclogin.data
 
-data class TestUser(
-    val hToken: String? = null,
-    val hUserName: String? = null
-)
+object TestUser {
+    var hToken: String? = null
+    var hUserName: String? = null
+}
