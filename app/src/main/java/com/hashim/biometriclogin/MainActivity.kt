@@ -13,23 +13,20 @@ import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
-import androidx.core.content.ContextCompat
-import com.hashim.biometriclogin.crypto.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
-import com.hashim.biometriclogin.crypto.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
 import com.hashim.biometriclogin.Constants.Companion.H_BIOMETRIC_KEY
 import com.hashim.biometriclogin.Constants.Companion.H_CIPHER_TEXT_KEY
 import com.hashim.biometriclogin.Constants.Companion.H_SHARED_PREFS
 import com.hashim.biometriclogin.crypto.BioMetricUtis
+import com.hashim.biometriclogin.crypto.BioMetricUtis.H_ERROR_BIOMETRIC_VALIDATION
+import com.hashim.biometriclogin.crypto.BioMetricUtis.H_HAS_BIOMETRIC_VALIDATION
 import com.hashim.biometriclogin.crypto.CryptoManagerImpl
 import com.hashim.biometriclogin.data.TestUser
 import com.hashim.biometriclogin.databinding.ActivityMainBinding
 import timber.log.Timber
-import java.util.concurrent.Executor
 
 class MainActivity : AppCompatActivity() {
     private lateinit var hActivityMainBinding: ActivityMainBinding
     private val hMainViewModel: MainViewModel by viewModels()
-    private lateinit var hExecutor: Executor
 
     private val hBioMetricUtis = BioMetricUtis
     private val hCryptoManagerImpl = CryptoManagerImpl
@@ -47,8 +44,12 @@ class MainActivity : AppCompatActivity() {
         hActivityMainBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(hActivityMainBinding.root)
 
-        Timber.d("ONcreate")
-        hExecutor = ContextCompat.getMainExecutor(this)
+
+        hMainViewModel.hCheckIfBiometricAuthenticationIsAvailable()
+
+        hSetupListeners()
+
+        hSubscribeObservers()
 
         hBioMetricUtis.hCheckIfBioMeticAuthenticationisAvailable(this) {
             when (it) {
@@ -62,6 +63,22 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun hSubscribeObservers() {
+
+        hMainViewModel.hLoginResultLd.observe(this) { loginResult ->
+
+        }
+        hMainViewModel.hLoginStateLd.observe(this) { loginState ->
+
+        }
+    }
+
+    private fun hSetupListeners() {
+        hActivityMainBinding.hLoginButton.setOnClickListener {
+            hMainViewModel.hDoConventionalLogin()
         }
     }
 

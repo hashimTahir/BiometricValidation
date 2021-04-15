@@ -47,8 +47,8 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/hUserNameEt" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/login"
+    <Button
+        android:id="@+id/hLoginButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/_16dp"
@@ -69,7 +69,7 @@
         android:textColor="#0000EE"
         android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/login" />
+        app:layout_constraintTop_toBottomOf="@+id/hLoginButton" />
 
     <TextView
         android:id="@+id/hStatusTv"
